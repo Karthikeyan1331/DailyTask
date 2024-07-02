@@ -1,0 +1,162 @@
+openapi: 3.0.0
+info:
+  title: "TodayTask"
+  version: "1.0.0"
+  description: "Create the testing api which is understand by the developer"
+servers:
+  - url: 'http://localhost:8000/api/speciality'
+    description: 'Sample task'
+components:
+  parameters:
+    TasksInput:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+      description: The ID of the task to retrieve
+  schemas:
+    TasksInput:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: '201'
+          description: "Give the mongodb _id to get the perticular document"
+      required:
+        - _id
+    TaskOutput:
+      type: object
+      properties:
+        firstname:
+          type: string
+          example: 'Hariharan'
+          description: "Give the firstname"
+        lastname:
+          type: string
+          example: 'Arumugam'
+          description: "Give the lastname"
+      required:
+        - firstname
+        - lastname
+  responses:
+    NotFound:
+      description: Recipe not found
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Internal server error occurred."
+
+paths:
+  /:
+    get:
+      tags:
+        - Task
+      summary: Get all the data
+      responses:
+        '200':
+          description: A list of food recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskOutput'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Task
+      summary: Add new data
+      operationId: Add Task
+      requestBody:
+        required: true
+        content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskOutput'
+      responses:
+        '200':
+          description: Task added successfully
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /{id}:
+    get:
+      tags:
+        - Task
+      summary: Get task by ID
+      operationId: getTaskById
+      parameters:
+        - $ref: '#/components/parameters/TasksInput'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskOutput'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - Task
+      summary: Get task by id
+      operationId: putTaskById
+      parameters:
+        - $ref: '#/components/parameters/TasksInput'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskOutput'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskOutput'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Task
+      summary: Delete a task by ID
+      operationId: deleteTaskById1
+      parameters:
+        - $ref: '#/components/parameters/TasksInput'
+      responses:
+        '200':
+          description: Task deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /delete/{id}:
+    put:
+      tags:
+        - Task
+      summary: Get task by ID
+      operationId: deleteTaskById
+      parameters:
+        - $ref: '#/components/parameters/TasksInput'
+      responses:
+        '200':
+          description: Successful response
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    

@@ -1,0 +1,52 @@
+openapi: 3.0.0
+info:
+  title: Dev Data API
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8000/api/dev'
+    description: 'Testing Api'
+components:
+  schemas:
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Data with ID {id} deleted"
+
+paths:
+  /dbdel:
+    delete:
+      tags:
+        - router2
+      summary: Delete all database data
+      description: Delete all data in the database
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /{id}:
+    delete:
+      tags:
+        - router2
+      summary: Delete data by patient ID
+      description: Delete data in the database by patient ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The patient ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Data not found

@@ -1,0 +1,117 @@
+openapi: 3.0.0
+info:
+  title: Food Recipe API
+  version: 1.0.0
+  description: API for managing food recipes
+components:
+  schemas:
+    FoodRecipe:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Unique identifier for the recipe
+        TranslatedRecipeName:
+          type: string
+          description: The translated name of the recipe
+        TranslatedIngredients:
+          type: string
+          description: The translated list of ingredients
+        PrepTimeInMins:
+          type: number
+          description: Preparation time in minutes
+        CookTimeInMins:
+          type: number
+          description: Cooking time in minutes
+        TotalTimeInMins:
+          type: number
+          description: Total time in minutes (Prep time + Cook time)
+        Servings:
+          type: number
+          description: Number of servings the recipe yields
+        Cuisine:
+          type: string
+          description: Cuisine type of the recipe
+        Course:
+          type: string
+          description: Course category of the recipe (e.g., appetizer, main course)
+        Diet:
+          type: string
+          description: Dietary category of the recipe (e.g., vegetarian, vegan)
+        TranslatedInstructions:
+          type: string
+          description: The translated cooking instructions
+        URL:
+          type: string
+          description: URL link to the recipe source
+        Image:
+          type: string
+          description: URL link to the recipe image
+
+      required:
+        - TranslatedRecipeName
+        - TranslatedIngredients
+        - PrepTimeInMins
+        - CookTimeInMins
+        - TotalTimeInMins
+        - Servings
+        - Cuisine
+        - Course
+        - Diet
+        - TranslatedInstructions
+        - URL
+        - Image
+
+  responses:
+    NotFound:
+      description: Recipe not found
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Internal server error occurred."
+
+paths:
+  /food:
+    get:
+      summary: Get a list of all food recipes
+      tags:
+        - Food
+      responses:
+        '200':
+          description: A list of food recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FoodRecipe'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /food/{id}:
+    get:
+      summary: Get food details by ID
+      tags:
+        - Food
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The ID of the food to retrieve
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodRecipe'
+        '500':
+          $ref: '#/components/responses/InternalServerError'

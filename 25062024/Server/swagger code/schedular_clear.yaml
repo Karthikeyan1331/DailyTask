@@ -1,0 +1,43 @@
+openapi: 3.0.0
+info:
+  title: Scheduler Clear API
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8000/api/schedular_clear'
+    description: 'Schedular_Clear'
+components:
+  schemas:
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Data with ID {id} deleted"
+
+paths:
+  /:
+    delete:
+      tags:
+        - router1
+      summary: Delete all erroneous data
+      description: Delete all data that are considered erroneous
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /del:
+    delete:
+      tags:
+        - router1
+      summary: Delete all data
+      description: Delete all data in the database
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'

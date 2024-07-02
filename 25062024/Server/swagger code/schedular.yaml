@@ -1,0 +1,212 @@
+openapi: 3.0.0
+info:
+  title: Patient API
+  version: 1.0.0
+components:
+  schemas:
+    MessageResponse: #router2 variable
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Data with ID {id} deleted"
+    TasksInput:
+      type: object
+      properties:
+        _id:
+          type: string
+      required:
+        - _id
+    TaskOutput:
+      type: object
+      properties:
+        patient_name:
+          type: string
+          example: "Dinesh Kumar"
+        schedule_data: 
+          type: string
+          example: "11/07/2024"
+        age:
+          type: integer
+          example: 12
+        problem:
+          type: string
+          example: "Blood Pressure"
+      required:
+        - patient_name
+        - schedule_data
+        - age
+
+paths:
+  /api/schedular:
+    get:
+      tags: 
+        - router
+      summary: Get all data
+      description: Retrieve all data
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskOutput'
+    post:
+      tags: 
+        - router
+      summary: Add new data
+      description: Add new data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskOutput'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "New data added"
+                  newData:
+                    $ref: '#/components/schemas/TasksInput'
+  
+  /api/schedular/{id}:
+    get:
+      tags: 
+        - router
+      summary: Get data by ID
+      description: Retrieve data by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the data to retrieve
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskOutput'
+    delete:
+      tags: 
+        - router
+      summary: Delete data by ID
+      description: Delete data by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the data to delete
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Data with ID {id} deleted"
+    
+    put:
+      tags: 
+        - router
+      summary: Update data by ID
+      description: Update data by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the data to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskOutput'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Data with ID {id} updated"
+                  newData:
+                    $ref: '#/components/schemas/TasksInput'
+    
+  /api/schedular/delete/{id}:
+    put:
+      tags: 
+        - router
+      summary: Soft delete data by ID
+      description: Soft delete data by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the data to soft delete
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Data with ID {id} soft deleted"
+  /api/schedular/approve:
+    post:
+      tags: 
+        - router
+      summary: Set status and copy data
+      description: Set status and copy data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                status:
+                  type: string
+              required:
+                - id
+                - status
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Data with ID {id} status set to {status} and copied" 
+  

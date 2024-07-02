@@ -1,0 +1,197 @@
+openapi: 3.0.0
+info:
+  title: Doctor API
+  version: 1.0.0
+  description: API for managing doctor information
+
+servers:
+  - url: http://localhost:8000/
+
+components:
+  schemas:
+    Doctor:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Unique identifier for the doctor
+        firstname:
+          type: string
+          description: First name of the doctor
+        lastname:
+          type: string
+          description: Last name of the doctor
+        specialty:
+          type: string
+          description: Specialty of the doctor
+        deleted:
+          type: boolean
+          description: Indicates if the doctor is soft deleted
+      required:
+        - firstname
+        - lastname
+        - specialty
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Resource not found
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Internal server error
+
+paths:
+  /api/doctor/:
+    get:
+      tags:
+        - DoctorRoute
+      summary: Get all doctors
+      responses:
+        200:
+          description: A list of doctors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Doctor'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - DoctorRoute
+      summary: Add a new doctor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Doctor'
+      responses:
+        201:
+          description: The created doctor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/doctor/{id}:
+    get:
+      tags:
+        - DoctorRoute
+      summary: Get a doctor by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The ID of the doctor to retrieve
+      responses:
+        200:
+          description: The requested doctor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+        404:
+          $ref: '#/components/responses/NotFound'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - DoctorRoute
+      summary: Update a doctor by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The ID of the doctor to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Doctor'
+      responses:
+        200:
+          description: The updated doctor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+        404:
+          $ref: '#/components/responses/NotFound'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - DoctorRoute
+      summary: Delete a doctor by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The ID of the doctor to delete
+      responses:
+        200:
+          description: The deleted doctor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Doctor removed successfully
+        404:
+          $ref: '#/components/responses/NotFound'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/doctor/delete/{id}:
+    put:
+      tags:
+        - DoctorRoute
+      summary: Soft delete a doctor by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The ID of the doctor to soft delete
+      responses:
+        200:
+          description: The soft deleted doctor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+        404:
+          $ref: '#/components/responses/NotFound'
+        500:
+          $ref: '#/components/responses/InternalServerError'
