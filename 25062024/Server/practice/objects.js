@@ -93,4 +93,49 @@ let ladder = {
     }
 };
 ladder.up().up().down().showStep().down().showStep();
+// Optional chaining
+console.log("Optional chaining")
+user = {
+    address: {
+        street_no: 46,
+        street_name: "Abirami Avenue"
+    }
+}; // user has no address
+
+console.log(user?.address?.street_name);
+
+// Symbols
+let id = Symbol("id");
+let id1 = Symbol("id");
+console.log(id === id1)
+user = {
+    name: "John",
+    age: 30,
+    [id]: 123 // not "id": 123
+};
+for (let key in user) console.log(user[key])
+console.log(user[id])
+// Symbols Global
+id = Symbol.for("id");
+id1 = Symbol.for("id");
+console.log(id === id1)
+// Symbol.toPrimitive
+user = {
+    name: "John",
+    money: 1000,
+
+    toString() {
+        return `{name: "${this.name}"}`;
+    },
+
+    // for hint="number" or "default"
+    valueOf() {
+        return this.money;
+    }
+};
+
+// conversions demo:
+console.log(user); // hint: string -> {name: "John"}
+console.log(+user); // hint: number -> 1000
+console.log(user + 500); // hint: default -> 1500
 console.log("\n")
