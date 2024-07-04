@@ -1,3 +1,5 @@
 module.exports = require('./regularexpression.js')
 module.exports = require('./objects.js')
 module.exports = require('./Datatypes.js')
+module.exports = require('./arraypacticeQuestion.js')
+module.exports = require('./iteratorMap&set.js')
