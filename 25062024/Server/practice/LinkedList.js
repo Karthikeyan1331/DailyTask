@@ -22,12 +22,11 @@ class SinglyLinkedList {
         }
         return
     }
-    display() {
-        let node = this.head
-        while (node) {
-            console.log(node.val)
-            node = node.next
-        }
+    display(node = this.head) {
+        if(!node)
+            return
+        console.log(node.val)
+        this.display(node.next)
     }
     deleteValue() {
 
@@ -94,6 +93,11 @@ class SinglyLinkedList {
         cur.val = data
         return
     }
+    displayINReverse(data = this.head){
+        if(data.next)
+            this.displayINReverse(data.next)
+        console.log(data.val)
+    }
 
 }
 
@@ -118,6 +122,7 @@ console.log("\n")
 linkList.updateIndex(2323, 11)
 linkList.display()
 console.log("\n")
+
 
 // Regex 
 const fs = require("fs");
@@ -148,23 +153,12 @@ console.log(Jan26_2017)
 let today = new Date();
 
 // Define options for formatting date in IST
-const options = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Kolkata'
-};
 
-// Format the current date to IST string
-const formattedISTDate = new Intl.DateTimeFormat('en-GB', options).format(today);
-const [datePart, timePart] = formattedISTDate.split(', ');
-const [day, month, year] = datePart.split(' ');
-const [hours, minutes, seconds] = timePart.split(':');
-const monthIndex = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(month);
-const istDate = new Date(Date.UTC(year, monthIndex, day, hours , minutes , seconds));
-console.log(formattedISTDate);
-console.log(istDate-new Date()); 
+console.log(`${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}:${today.getMilliseconds()}`);
+function sumTo(num) {
+    if (num <= 1)
+        return num
+    return sumTo(num - 1) + sumTo(num - 1)
+}
+console.log(sumTo(7))
+linkList.displayINReverse()

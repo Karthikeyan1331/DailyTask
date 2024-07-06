@@ -1,0 +1,160 @@
+openapi: 3.0.0
+info:
+  title: Appointment API
+  version: 1.0.0
+  description: API for managing appointments
+
+paths:
+  /api/ancr/right_foot/:
+    get:
+      tags:
+        - Right foot
+      summary: Get all appointments
+      responses:
+        '200':
+          description: A list of appointments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Appointment'
+        '500':
+          description: Server error
+
+    post:
+      tags:
+        - Right foot
+      summary: Create a new appointment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+      responses:
+        '201':
+          description: Appointment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+        '400':
+          description: Invalid input
+        '500':
+          description: Server error
+
+  /api/ancr/right_foot/{id}:
+    get:
+      tags:
+        - Right foot
+      summary: Get an appointment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The appointment ID
+      responses:
+        '200':
+          description: Appointment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+        '404':
+          description: Appointment not found
+        '500':
+          description: Server error
+
+    put:
+      tags:
+        - Right foot
+      summary: Update an appointment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The appointment ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+      responses:
+        '200':
+          description: Appointment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+        '400':
+          description: Invalid input
+        '404':
+          description: Appointment not found
+        '500':
+          description: Server error
+
+    delete:
+      tags:
+        - Right foot
+      summary: Delete an appointment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The appointment ID
+      responses:
+        '200':
+          description: Appointment deleted
+        '404':
+          description: Appointment not found
+        '500':
+          description: Server error
+
+components:
+  schemas:
+    Appointment:
+      type: object
+      required:
+        - firstname
+        - lastname
+        - doctorname
+        - date
+        - complain
+      properties:
+        _id:
+          type: string
+          description: The auto-generated id of the appointment
+        firstname:
+          type: string
+          description: The first name of the patient
+        lastname:
+          type: string
+          description: The last name of the patient
+        doctorname:
+          type: string
+          description: The name of the doctor
+        date:
+          type: string
+          format: date-time
+          description: The date of the appointment
+        complain:
+          type: string
+          description: The complaint of the patient
+        location:
+          type: string
+          description: The location of the appointment
+      example:
+        firstname: 'John'
+        lastname: 'Doe'
+        doctorname: 'Dr. Smith'
+        date: '2021-07-06T14:30:00Z'
+        complain: 'Headache'
+        location: 'Clinic A'
