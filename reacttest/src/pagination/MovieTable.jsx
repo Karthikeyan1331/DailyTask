@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import Pagination from './Pagination';
 import DataGet from "./DataGet";
+import PopUpWindow from "./PopUpWindow";
 
 class MovieTable extends Component {
     state = {
@@ -8,7 +9,9 @@ class MovieTable extends Component {
         pageSize: 4,
         totalPage: 0,
         currentPage: 1,
-    }
+        popupOpen: false,
+        deletingDealID: null,
+    };
 
     async componentDidMount() {
         const data = await DataGet();
@@ -16,22 +19,32 @@ class MovieTable extends Component {
     }
 
     handleOnClickDelete = (dealID) => {
-        if (window.confirm("Do you really want to delete this item?")) {
+        this.setState({
+            popupOpen: true,
+            deletingDealID: dealID,
+        });
+    };
+
+    handlePopupClose = (agree) => {
+        if (agree) {
+            // User agreed, delete the item
             this.setState(prevState => ({
-                content: prevState.content.filter(item => item.dealID !== dealID)
+                content: prevState.content.filter(item => item.dealID !== prevState.deletingDealID)
             }));
         }
-    }
+        // Reset states
+        this.setState({ popupOpen: false, deletingDealID: null });
+    };
 
     handleOnPageChange = (page) => {
         this.setState({ currentPage: page });
-    }
+    };
 
     getPagedData = () => {
         const { content, pageSize, currentPage } = this.state;
         const startIndex = (currentPage - 1) * pageSize;
         return content.slice(startIndex, startIndex + pageSize);
-    }
+    };
 
     render() {
         const { length: count } = this.state.content;
@@ -41,6 +54,7 @@ class MovieTable extends Component {
 
         return (
             <React.Fragment>
+                <PopUpWindow open={this.state.popupOpen} handleClose={this.handlePopupClose} />
                 <div>Showing exactly {count} games and movie reviews</div>
                 <Pagination
                     itemCount={count}
@@ -80,7 +94,6 @@ class MovieTable extends Component {
                         </tbody>
                     </table>
                 </div>
-                
             </React.Fragment>
         );
     }

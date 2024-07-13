@@ -1,0 +1,24 @@
+.inside button {
+    margin-bottom: 10px;
+}
+
+.Other {
+    margin-bottom: 0px;
+    margin-left: 20px;
+    height: 40px;
+    border-radius: 5px;
+    border: 1px solid black;
+    padding-left: 10px;
+    width: 100px;
+}
+
+.EraserIcon {
+    font-size: 25px;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: all .2s;
+}
+
+.EraserIcon:hover {
+    transform: scale(1.1);
+}
