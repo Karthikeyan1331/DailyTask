@@ -5,6 +5,9 @@ import App from './App';
 import Mainpage from './pagination/Mainpage';
 import NavbarContent from './NavbarContent';
 import CommanBtn from './button/CommanBtn';
+import Registration from './ChatApp/Registration';
+import Login from './ChatApp/Login'
+import ChatWindow from './ChatApp/Home'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import {
@@ -23,6 +26,18 @@ const router = createBrowserRouter([
     {
         path: "/button",
         element: <CommanBtn />
+    },
+    {
+        path: "/ChatRegistration",
+        element: <Registration />
+    },
+    {
+        path: "/ChatLogin",
+        element: <Login />
+    },
+    {
+        path: "/ChatWindow",
+        element: <ChatWindow />
     },
 
 ])
