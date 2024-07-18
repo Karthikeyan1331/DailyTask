@@ -14,6 +14,7 @@ class NavbarContent extends Component {
                         <Nav.Link href="/Pagination">Movie</Nav.Link>
                         <Nav.Link href="/button">Button</Nav.Link>
                         <Nav.Link href="/ChatRegistration">Chat</Nav.Link>
+                        <Nav.Link href="/Product">Product</Nav.Link>
                     </Nav>
                 </Container>
             </Navbar>

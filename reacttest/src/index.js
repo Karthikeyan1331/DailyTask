@@ -8,6 +8,8 @@ import CommanBtn from './button/CommanBtn';
 import Registration from './ChatApp/Registration';
 import Login from './ChatApp/Login'
 import ChatWindow from './ChatApp/Home'
+import Product from './Product/Home';
+import AddToCart from './Product/AddToCart';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import {
@@ -38,6 +40,14 @@ const router = createBrowserRouter([
     {
         path: "/ChatWindow",
         element: <ChatWindow />
+    },
+    {
+        path: "/Product",
+        element: <Product />
+    },
+    {
+        path: "/AddToCart",
+        element: <AddToCart />
     },
 
 ])
