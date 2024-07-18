@@ -41,10 +41,28 @@ const Home = () => {
                 return {
                     name: productName,
                     rate: product ? product.rate : 0
+                    
                 };
             });
         console.log("Adding to cart:", itemsToAdd);
-        navigate('/AddToCart', { state: { itemsToAdd } });
+        if (itemsToAdd.length === 0) {
+            navigate("/AddToCart")
+        }
+        else {
+            const cartItems = localStorage.getItem("AddToCart");
+            if (cartItems) {
+                let tmp = JSON.parse(cartItems);
+                if (tmp.length === 0) {
+                    localStorage.setItem("AddToCart", JSON.stringify([itemsToAdd]));
+                } else {
+                    tmp.unshift(itemsToAdd);
+                    localStorage.setItem("AddToCart", JSON.stringify(tmp));
+                }
+            } else {
+                localStorage.setItem("AddToCart", JSON.stringify([itemsToAdd]));
+            }
+            navigate("/AddToCart")
+        }
     };
     return (
         <div className='mt-5'>

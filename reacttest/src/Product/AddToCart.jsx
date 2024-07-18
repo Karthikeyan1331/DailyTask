@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
 const AddToCart = () => {
-    const location = useLocation();
-    const selectedValues = location?.state?.itemsToAdd || [];
+    console.log()
     const [value, setValue] = useState([]);
     useEffect(() => {
         // Check if "AddToCart" exists in localStorage
@@ -12,21 +10,42 @@ const AddToCart = () => {
         }
     }, []);
 
-    // Update value state with selectedValues
-    useMemo(() => {
-        console.log(value)
-        setValue([selectedValues]);
-    }, [selectedValues]);
-
     return (
         <div>
-            {/* Render content related to AddToCart component */}
+            <div className='container border shadow justify-content-center p-4 mt-3'>
             <h2>Items in Cart:</h2>
-            <ul>
-                {value[1][0].map((item, index) => (
-                    <li key={index}>{item.name}</li>
-                ))}
-            </ul>
+                {value.map((item, index) => {
+                    let tot = 0;
+                    return (
+                        <div key={index} className='container border shadow justify-content-center p-4 mt-3'>
+                            {item.map((item1, index1) => {
+                                tot += item1.rate;
+                                return (
+                                    <div key={index1} className='container justify-content-center p-4 mt-3 h3'>
+                                        <div className='row mb-3'>
+                                            <div className='col-md-3'>
+                                                {item1.name}
+                                            </div>
+                                            <div className='col-md-4'>
+                                                <img src={item1?.image} alt={item1.name} width="100" />
+                                            </div>
+                                            <div className='col-md-4 d-flex justify-content-end align-items-center'>
+                                                <div>{item1.rate}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            <div className='row mt-3 border bg-light d-flex h2'>
+                                <div className='col-md-9'>Total</div>
+                                <div className='col-md-3 d-flex justify-content-end align-items-center'>
+                                    <div className='me-5'>₹{tot}</div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 };

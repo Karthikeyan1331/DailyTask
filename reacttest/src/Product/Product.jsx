@@ -19,6 +19,7 @@ const Product = ({ checkedItem, productName, rateItem, imageItem="https://thumbs
         const isChecked = e.target.checked;
         setIsChecked(isChecked);
         onCheckboxChange(productName, isChecked);
+        
     };
 
     return (

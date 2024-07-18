@@ -39,7 +39,7 @@ const Login = () => {
                 setErrors(tempErrors)
                 if (response.status === 200) {
                     console.log('Registration successful:', response.data);
-                    // Optionally redirect to login page
+                    navigate("/ChatWindow")
                 }
                 else if (response.status === 201) {
                     tempErrors.email = response?.data?.message || "Username is incorrect";

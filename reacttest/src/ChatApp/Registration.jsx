@@ -4,7 +4,6 @@ import { AccountCircle, EmailRounded, HttpsRounded, Visibility, VisibilityOff } 
 import { useNavigate } from 'react-router-dom';
 import UploadImagePreview from './UploadImagePreview';
 import axios from 'axios';
-
 const RegistrationForm = () => {
 
     const navigate = useNavigate();
@@ -62,8 +61,8 @@ const RegistrationForm = () => {
                 setErrors(tempErrors)
                 console.log(response.status)
                 if (response.status === 200) {
-                    console.log('Registration successful:', response.data);
-                    // Optionally redirect to login page
+                    console.log('Registration successful:', response);
+                    navigate("/ChatWindow")
                 }
                 else if (response.status === 201) {
                     tempErrors.username = response?.data?.message || "Username Already existed";
@@ -74,7 +73,7 @@ const RegistrationForm = () => {
 
                 }
                 else {
-                    console.log('Registration failed:', response.data);
+                    console.log('Registration failed:', response?.data);
                     // Handle error scenario
                 }
                 setErrors(tempErrors)
@@ -89,6 +88,7 @@ const RegistrationForm = () => {
         setShowPassword(!showPassword);
     };
 
+   
     return (
         <Container component="main" maxWidth="xs">
             <Box
@@ -179,6 +179,7 @@ const RegistrationForm = () => {
                         }}
                     />
                     <UploadImagePreview onChange={handleImageChange} />
+                    
                     <Button
                         type="submit"
                         fullWidth

@@ -10,6 +10,7 @@ import Login from './ChatApp/Login'
 import ChatWindow from './ChatApp/Home'
 import Product from './Product/Home';
 import AddToCart from './Product/AddToCart';
+import Grab from './Experiment/FunGame';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import {
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
     {
         path: "/AddToCart",
         element: <AddToCart />
+    },
+    {
+        path: "/Grab",
+        element: <Grab />
     },
 
 ])
