@@ -3,6 +3,7 @@ import { TextField, Button, Container, Typography, Box, Link, InputAdornment, Ic
 import { AccountCircle, EmailRounded, HttpsRounded, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios';
+import ReCAPTCHA from "react-google-recaptcha";
 const Login = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
@@ -59,7 +60,9 @@ const Login = () => {
             }
         }
     };
-
+    function reCapTcha(value) {
+        console.log("Captcha value:", value);
+    }
     return (
         <Container component="main" maxWidth="xs">
             <Box
@@ -154,6 +157,10 @@ const Login = () => {
                             Registration
                         </Link>
                     </Box>
+                    <ReCAPTCHA
+                        sitekey="6LfRsxUqAAAAAJNEuD4bfyEaAXXe5VZsu4yuN1ya"
+                        onChange={reCapTcha}
+                    />
                 </Box>
             </Box>
         </Container>

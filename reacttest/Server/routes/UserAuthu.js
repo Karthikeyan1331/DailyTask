@@ -73,24 +73,6 @@ router.post('/Login', async (req, res) => {
         res.status(500).json({ message: 'Login failed' });
     }
 });
-router.post("/verify-recaptcha", (req, res) => {
-    const secretKey = "6LeD2BIqAAAAAPpCV3nWUTgJmRyT3wn50tJG5OgT";
-    const token = req.body.response;
 
-    const verificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`;
-
-    axios.post(verificationUrl)
-        .then(response => {
-            if (response.data.success) {
-                res.json({ success: true });
-            } else {
-                res.json({ success: false });
-            }
-        })
-        .catch(error => {
-            console.error(error);
-            res.json({ success: false });
-        });
-});
 
 module.exports = router;

@@ -4,6 +4,7 @@ import { AccountCircle, EmailRounded, HttpsRounded, Visibility, VisibilityOff } 
 import { useNavigate } from 'react-router-dom';
 import UploadImagePreview from './UploadImagePreview';
 import axios from 'axios';
+import ReCAPTCHA from "react-google-recaptcha";
 const RegistrationForm = () => {
 
     const navigate = useNavigate();
@@ -88,7 +89,10 @@ const RegistrationForm = () => {
         setShowPassword(!showPassword);
     };
 
-   
+    
+    function reCapTcha(value) {
+        console.log("Captcha value:", value);
+      }
     return (
         <Container component="main" maxWidth="xs">
             <Box
@@ -179,7 +183,10 @@ const RegistrationForm = () => {
                         }}
                     />
                     <UploadImagePreview onChange={handleImageChange} />
-                    
+                    <ReCAPTCHA
+                        sitekey="6LfRsxUqAAAAAJNEuD4bfyEaAXXe5VZsu4yuN1ya"
+                        onChange={reCapTcha}
+                    />
                     <Button
                         type="submit"
                         fullWidth
@@ -204,7 +211,9 @@ const RegistrationForm = () => {
                         >
                             Login
                         </Link>
+
                     </Box>
+
                 </Box>
             </Box>
         </Container>
