@@ -1,41 +1,50 @@
 import React, { useState, useEffect, useRef } from 'react';
+import io from 'socket.io-client';
 import 'mdb-react-ui-kit/dist/css/mdb.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import data from '@emoji-mart/data'
-import Picker from '@emoji-mart/react'
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
+import { useNavigate } from 'react-router-dom';
+import ContactInfo from './ChatComponent/ContactInfo';
+import SearchProfile from './ChatComponent/SearchProfile';
+import './Chat.css';
+import Container from 'react-bootstrap/Container';
+import Navbar from 'react-bootstrap/Navbar';
+import Profile from './ChatComponent/Profile';
+
+const SERVER_URL = 'http://localhost:8000';
 
 const ChatComponent = () => {
+  const navigate = useNavigate();
   const [showPicker, setShowPicker] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(null);
   const [inputValue, setInputValue] = useState('');
-  const pickerRef = useRef();
-  const inputRef = useRef();
-  const handleClickOutside = (event) => {
-    if (
-      pickerRef.current &&
-      !pickerRef.current.contains(event.target) &&
-      !inputRef.current.contains(event.target)
-    ) {
-      setShowPicker(false);
-    }
-  };
-  const handleEmojiClick = (emoji) => {
-    const value = inputValue;
-    const start = value.substring(0, cursorPosition);
-    const end = value.substring(cursorPosition);
-    const newValue = start + emoji.native + end;
-    setInputValue(newValue);
-    setCursorPosition(cursorPosition + emoji.native.length);
+  const [rows, setRows] = useState(1);
+  const [messages, setMessages] = useState([]);
+  const [contacts, setContacts] = useState(); // List of contacts
+  const [activeContact, setActiveContact] = useState(null); // Active contact
+  const pickerRef = useRef(null);
+  const inputRef = useRef(null);
+  const socket = io.connect(SERVER_URL)
+  useEffect(() => {
+    if ('UserData' in localStorage)
+      setContacts(JSON.parse(localStorage.getItem('UserData')))
+  }, [])
 
-
-    // Move cursor to the new position
-    inputRef.current.focus();
-    setTimeout(() => {
-      inputRef.current.setSelectionRange(cursorPosition + emoji.native.length, cursorPosition + emoji.native.length);
-    }, 0);
-  };
 
   useEffect(() => {
+    if (!localStorage.getItem('ChatToken')) {
+      navigate('/ChatLogin');
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target) && !inputRef.current.contains(event.target)) {
+        setShowPicker(false);
+      }
+    };
+
     if (showPicker) {
       document.addEventListener('mousedown', handleClickOutside);
     } else {
@@ -46,131 +55,185 @@ const ChatComponent = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showPicker]);
+
   const handleInputChange = (e) => {
+    const textAreaLineHeight = 25;
+    const previousRows = e.target.rows;
+    e.target.rows = 1;
+    const currentRows = Math.min(3, Math.floor(e.target.scrollHeight / textAreaLineHeight));
+
+    if (currentRows !== previousRows) {
+      e.target.rows = currentRows;
+    }
+
+    setRows(currentRows);
     setInputValue(e.target.value);
   };
 
   const handleInputClick = (e) => {
     setCursorPosition(e.target.selectionStart);
   };
+
+  const handleEmojiClick = (emoji) => {
+    const value = inputValue;
+    const start = value.substring(0, cursorPosition);
+    const end = value.substring(cursorPosition);
+    const newValue = start + emoji.native + end;
+
+    setInputValue(newValue);
+    setCursorPosition(cursorPosition + emoji.native.length);
+
+    inputRef.current.focus();
+    setTimeout(() => {
+      inputRef.current.setSelectionRange(cursorPosition + emoji.native.length, cursorPosition + emoji.native.length);
+    }, 0);
+  };
+
+  const sendMessage = () => {
+    console.log("try to emit")
+    socket.emit("send_message", { message: "hello" })
+    // if (inputValue.trim() && activeContact) {
+    //   console.log("try to emit1")
+    //   const message = {
+    //     text: inputValue,
+    //     sender: contacts.username,
+    //     receiver: activeContact.username,
+    //     timestamp: new Date().toLocaleTimeString(),
+    //   };
+    //   console.log(message)
+    //   socket.emit("message",message)
+    //   setMessages((prevMessages) => [...prevMessages, message]);
+    //   setInputValue('');
+    // }
+  };
+  useEffect(() => {
+    socket.on("recieve message", (data) => {
+      alert(data)
+    })
+  }, [socket])
+  const handleContactSelect = (contact) => {
+    console.log(contact)
+    setActiveContact(contact);
+    // Fetch messages for the selected contact
+    // You might need to implement an API call here to fetch messages from your server
+    // setMessages(fetchedMessages);
+  };
+
+  const formatTimestamp = (timestamp) => {
+    const [time, period] = timestamp.split(' ');
+    const [hours, minutes, seconds] = time.split(':').map(Number);
+
+    let adjustedHours = hours;
+    if (period === 'pm' && hours !== 12) {
+      adjustedHours += 12;
+    } else if (period === 'am' && hours === 12) {
+      adjustedHours = 0;
+    }
+
+    const date = new Date();
+    date.setHours(adjustedHours, minutes, seconds);
+
+    const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
+    const timeFormatted = date.toLocaleString('en-GB', timeOptions);
+
+    const dateOptions = { month: 'short', day: '2-digit' };
+    const dateFormatted = date.toLocaleString('en-US', dateOptions);
+
+    return `${timeFormatted}|${dateFormatted}`;
+  };
+
   return (
     <section style={{ backgroundColor: '#CDC4F9' }}>
-      <div className="container py-5">
+      <div className="container py-2">
         <div className="row">
           <div className="col-md-12">
             <div className="card" id="chat3" style={{ borderRadius: '15px' }}>
               <div className="card-body">
                 <div className="row">
                   <div className="col-md-6 col-lg-5 col-xl-4 mb-4 mb-md-0">
+                    <Profile />
                     <div className="p-3">
-                      <div className="input-group rounded mb-3">
-                        <input
-                          type="search"
-                          className="form-control rounded"
-                          placeholder="Search"
-                          aria-label="Search"
-                          aria-describedby="search-addon"
-                        />
-                        <span className="input-group-text border-0" id="search-addon">
-                          <i className="fas fa-search"></i>
-                        </span>
-                      </div>
-                      <div style={{ position: 'relative', height: '400px', overflowY: 'auto' }}>
-                        <ul className="list-unstyled mb-0">
-                          <li className="p-2 border-bottom">
-                            <div className="d-flex justify-content-between">
-                              <div className="d-flex flex-row">
-                                <div>
-                                  <img
-                                    src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava1-bg.webp"
-                                    alt="avatar"
-                                    className="d-flex align-self-center me-3"
-                                    width="60"
-                                  />
-                                  <span className="badge bg-success badge-dot"></span>
-                                </div>
-                                <div className="pt-1">
-                                  <p className="fw-bold mb-0">Marie Horwitz</p>
-                                  <p className="small text-muted">Hello, Are you there?</p>
-                                </div>
-                              </div>
-                              <div className="pt-1">
-                                <p className="small text-muted mb-1">Just now</p>
-                                <span className="badge bg-success rounded-pill float-end">3</span>
-                              </div>
-                            </div>
-                          </li>
-                          {/* Repeat similar structure for other chat items */}
-                        </ul>
-                      </div>
+                      <SearchProfile />
+                      <ContactInfo onSelectContact={handleContactSelect} />
                     </div>
                   </div>
                   <div className="col-md-6 col-lg-7 col-xl-8">
+                    <Navbar expand="lg" className="bg-body-tertiary">
+                      <Container className="d-flex align-items-center">
+                        <Navbar.Brand className="d-flex align-items-center">
+                          <img
+                            src={`http://localhost:8000/${activeContact?.profile || "profile.jpg"}`}
+                            width="40"
+                            height="40"
+                            className="rounded-circle me-2 object-fit-cover border rounded-circle"
+                            alt="Profile"
+                          />
+                          <span>{activeContact ? activeContact.username : 'Select a contact'}</span>
+                        </Navbar.Brand>
+                      </Container>
+                    </Navbar>
                     <div className="pt-3 pe-3" style={{ position: 'relative', height: '400px', overflowY: 'auto' }}>
-                      <div className="d-flex flex-row justify-content-start">
-                        <img
-                          src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava6-bg.webp"
-                          alt="avatar 1"
-                          style={{ width: '45px', height: '100%' }}
-                        />
-                        <div>
-                          <p className="small p-2 ms-3 mb-1 rounded-3 bg-body-tertiary">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
-                            ut labore et dolore magna aliqua.
-                          </p>
-                          <p className="small ms-3 mb-3 rounded-3 text-muted float-end">12:00 PM | Aug 13</p>
-                        </div>
+                      <div className="d-flex flex-column">
+                        {messages
+                          .filter((msg) => msg.receiver === (activeContact?.username || msg.sender === activeContact?.username))
+                          .map((msg, index) => (
+                            <div
+                              key={index}
+                              className={`d-flex flex-row mb-3 ${msg.sender === contacts?.username ? 'justify-content-end' : 'justify-content-start'}`}
+                            >
+                              <div>
+                                <p
+                                  className={`small p-2 ${msg.sender === contacts?.username ? 'me-1 mb-0 text-white bg-primary' : 'ms-3 bg-body-secondary'} rounded-3 text-start`}
+                                >
+                                  {msg.text}
+                                </p>
+                                <p
+                                  className="small rounded-3 text-muted me-1 float-end"
+                                  style={{ fontSize: '0.75rem' }}
+                                >
+                                  {formatTimestamp(msg.timestamp)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
                       </div>
-                      <div className="d-flex flex-row justify-content-end">
-                        <div>
-                          <p className="small p-2 me-3 mb-1 text-white rounded-3 bg-primary">
-                            Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-                            commodo consequat.
-                          </p>
-                          <p className="small me-3 mb-3 rounded-3 text-muted">12:00 PM | Aug 13</p>
-                        </div>
-                        <img
-                          src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava1-bg.webp"
-                          alt="avatar 1"
-                          style={{ width: '45px', height: '100%' }}
-                        />
-                      </div>
-                      {/* Repeat similar structure for other messages */}
                     </div>
-                    <div className="text-muted d-flex justify-content-start align-items-center pe-3 pt-3 mt-2">
+                    <div className="d-flex align-items-center pe-3 pt-3 mt-2">
                       <img
-                        src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava6-bg.webp"
-                        alt="avatar 3"
-                        style={{ width: '40px', height: '100%', marginRight: "5px" }}
+                        src={`http://localhost:8000/${contacts?.profile ? contacts.profile : "profile.jpg"}`}
+                        alt="avatar"
+                        className='rounded-circle object-fit-cover me-1'
+                        width='50'
+                        height='40'
                       />
-                      <input
-                        type="text"
+                      <textarea
                         className="form-control form-control-md"
                         id="exampleFormControlInput2"
                         placeholder="Type message"
-                        style={{ marginRight: '5px' }}
+                        style={{ marginRight: '5px', resize: 'none' }}
                         value={inputValue}
                         onChange={handleInputChange}
                         onClick={handleInputClick}
                         onSelect={handleInputClick}
                         ref={inputRef}
+                        rows={rows}
                       />
                       <a className="ms-1 text-muted" href="#!">
                         <i className="fas fa-paperclip"></i>
                       </a>
                       <div style={{ position: 'relative', display: 'inline-block' }}>
-                        <a className="ms-3 text-muted" href="#!" onClick={() => setShowPicker(!showPicker)}>
+                        <a className="ms-1 text-muted" href="#!" onClick={() => setShowPicker((val) => !val)}>
                           <i className="fas fa-smile"></i>
                         </a>
                         {showPicker && (
-                          <div ref={pickerRef} style={{ position: 'absolute', top: '0%', transform: 'translate(-18vw, -70vh)', left: '0', right: '0', zIndex: 1 }}>
+                          <div style={{ position: 'absolute', bottom: '40px', right: '0px', zIndex: 1 }} ref={pickerRef}>
                             <Picker data={data} onEmojiSelect={handleEmojiClick} />
                           </div>
                         )}
                       </div>
-                      <a className="ms-3" href="#!">
-                        <i className="fas fa-paper-plane"></i>
-                      </a>
+                      <button type="button" className="btn btn-primary btn-md" style={{ paddingTop: '.55rem' }} onClick={sendMessage}>
+                        Send
+                      </button>
                     </div>
                   </div>
                 </div>

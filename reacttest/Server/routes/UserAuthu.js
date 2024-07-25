@@ -3,7 +3,17 @@ const router = express.Router();
 const upload = require('./fileUpload');
 const User = require("../models/userSchema")
 const fs = require('fs')
+const jwt = require('jsonwebtoken');
+const verifyToken = require('../db/middleware');
 
+const generateAuthToken = (user) => {
+    console.log(user.username, user.email, process.env.JWT_SECRET)
+    return jwt.sign(
+        { user }, // Payload
+        process.env.JWT_SECRET, // Secret key
+        { expiresIn: '7d' } // Token expiry time
+    );
+};
 router.post('/Registration', upload.single('image'), async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -37,7 +47,8 @@ router.post('/Registration', upload.single('image'), async (req, res) => {
 
         // Save user to MongoDB
         const savedUser = await newUser.save();
-        res.status(200).json({ message: 'Registration successful', user: savedUser });
+        const token = generateAuthToken(savedUser);
+        res.status(200).json({ token, userData: savedUser });
     } catch (error) {
         console.error('Error registering user:', error);
         res.status(500).json({ message: 'Registration failed' });
@@ -57,7 +68,7 @@ router.post('/Login', async (req, res) => {
         }
 
         // Check if password matches
-        
+
         if (user3.password !== password) {
             return res.status(202).json({ message: 'Password is incorrect' });
         }
@@ -65,14 +76,25 @@ router.post('/Login', async (req, res) => {
         // Update online status to true (if you have this field)
         user3.Online = true;
         await user3.save();
+        const token = generateAuthToken(user3);
+
+        // Send the token in the response
+        res.status(200).json({ token, userData: user3 });
 
         // Respond with success
-        res.status(200).json({ message: 'Login successful', user3 });
     } catch (error) {
         console.error('Error during login:', error);
         res.status(500).json({ message: 'Login failed' });
     }
 });
 
-
+router.post('/UserData', verifyToken, async (req, res) => {
+    try {
+        const users = await User.find();
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 module.exports = router;

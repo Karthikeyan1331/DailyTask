@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { TextField, Button, Container, Typography, Box, Link, InputAdornment, IconButton, Stack } from '@mui/material';
 import { AccountCircle, EmailRounded, HttpsRounded, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,7 @@ const RegistrationForm = () => {
         password: '',
         image: null, // Add image state to formData
     });
+    const [reCap, setReCap] = useState(null)
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
 
@@ -63,6 +64,8 @@ const RegistrationForm = () => {
                 console.log(response.status)
                 if (response.status === 200) {
                     console.log('Registration successful:', response);
+                    localStorage.setItem('ChatToken', response.data.token);
+                    localStorage.setItem('UserData', JSON.stringify(response.data.userData));
                     navigate("/ChatWindow")
                 }
                 else if (response.status === 201) {
@@ -88,11 +91,15 @@ const RegistrationForm = () => {
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
     };
+    useMemo(() => {
+        if (formData.username === '' || formData.email === '' || formData.password === '')
+            setReCap(null)
+    }, [formData])
 
-    
     function reCapTcha(value) {
+        setReCap(value.value)
         console.log("Captcha value:", value);
-      }
+    }
     return (
         <Container component="main" maxWidth="xs">
             <Box
@@ -183,14 +190,19 @@ const RegistrationForm = () => {
                         }}
                     />
                     <UploadImagePreview onChange={handleImageChange} />
-                    <ReCAPTCHA
-                        sitekey="6LfRsxUqAAAAAJNEuD4bfyEaAXXe5VZsu4yuN1ya"
-                        onChange={reCapTcha}
-                    />
+                    {formData.password && formData.email && formData.username && (
+                        <div style={{ display: 'flex', justifyContent: 'center', margin: '5px 0' }}>
+                            <ReCAPTCHA
+                                sitekey="6LfRsxUqAAAAAJNEuD4bfyEaAXXe5VZsu4yuN1ya"
+                                onChange={reCapTcha}
+                            />
+                        </div>
+                    )}
                     <Button
                         type="submit"
                         fullWidth
                         variant="contained"
+                        disabled={reCap === null}
                         color="primary"
                         sx={{ mt: 3, mb: 2 }}
                     >

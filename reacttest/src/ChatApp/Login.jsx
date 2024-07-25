@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { TextField, Button, Container, Typography, Box, Link, InputAdornment, IconButton } from '@mui/material';
 import { AccountCircle, EmailRounded, HttpsRounded, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom'
@@ -40,6 +40,8 @@ const Login = () => {
                 setErrors(tempErrors)
                 if (response.status === 200) {
                     console.log('Registration successful:', response.data);
+                    localStorage.setItem('ChatToken', response.data.token);
+                    localStorage.setItem('UserData', JSON.stringify(response.data.userData));
                     navigate("/ChatWindow")
                 }
                 else if (response.status === 201) {
@@ -60,9 +62,8 @@ const Login = () => {
             }
         }
     };
-    function reCapTcha(value) {
-        console.log("Captcha value:", value);
-    }
+
+
     return (
         <Container component="main" maxWidth="xs">
             <Box
@@ -85,7 +86,7 @@ const Login = () => {
                         id="email"
                         autoFocus
                         type='text'
-                        label="Email Address"
+                        label="Email or Username"
                         name="email"
                         autoComplete="new-email"
                         value={formData.email}
@@ -132,6 +133,7 @@ const Login = () => {
                             ),
                         }}
                     />
+
                     <Button
                         type="submit"
                         fullWidth
@@ -157,10 +159,7 @@ const Login = () => {
                             Registration
                         </Link>
                     </Box>
-                    <ReCAPTCHA
-                        sitekey="6LfRsxUqAAAAAJNEuD4bfyEaAXXe5VZsu4yuN1ya"
-                        onChange={reCapTcha}
-                    />
+
                 </Box>
             </Box>
         </Container>
