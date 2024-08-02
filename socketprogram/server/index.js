@@ -1,30 +1,27 @@
-const express = require("express")
-const app = express()
-const http = require("http")
-const { Server } = require("socket.io")
-const cors = require('cors')
-app.use(cors())
-const server = http.createServer(app)
-const PORT = 8000
-const io = new Server(server, {
-    cors: {
-        origin: "http://localhost:3000",
-        methods: ['POST', 'GET']
-    }
-})
-io.on('connection', (socket) => {
-    console.log("User connected with", socket.id)
-    socket.on('join_room', (data) => {
-        socket.join(data)
-    })
-    socket.on('send_message', (data) => {
-        console.log(data)
-        if (data.room !== '')
-            socket.to(data.room).emit("message_receive", data)
-        else
-            socket.broadcast.emit("message_receive", data)
-    })
-})
+const express = require("express");
+const app = express();
+const http = require("http");
+const path = require('path');
+const cors = require('cors');
+const loginRoute = require("./route/login");
+const ChatRoute = require("./route/Chat")
+require('dotenv').config();
+
+const initializeSocket = require("./socket");
+
+app.use(cors());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/', loginRoute);
+app.use('/', ChatRoute);
+
+const server = http.createServer(app);
+const PORT = process.env.PORT || 8000;
+
+// Initialize Socket.IO
+initializeSocket(server);
+
 server.listen(PORT, () => {
-    console.log(`Connected to http://localhost:${PORT}`)
-})
+    console.log(`Connected to http://localhost:${PORT}`);
+});

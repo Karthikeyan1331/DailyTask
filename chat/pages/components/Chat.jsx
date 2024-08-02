@@ -1,0 +1,235 @@
+'use client'
+import Link from 'next/link';
+import React, { useEffect, useState, useMemo } from 'react';
+import io from 'socket.io-client';
+import { fetchUsers, fetchMessages, formatTimestamp } from './fetchUsers';
+import ChatList from './Users';
+import { DoneAllRounded, CheckRounded } from '@mui/icons-material';
+const Chat = () => {
+    const API_URL = "http://localhost:8000"
+    const [socket, setSocket] = useState(null);
+    const [message, setMessage] = useState('');
+    const [messages, setMessages] = useState([]);
+    const [name, setName] = useState('');
+    const [users, setUsers] = useState([]);
+    const [privateChatUser, setPrivateChatUser] = useState(null);
+    const [onlineMembers, setOnlineMembers] = useState([]);
+    useEffect(() => {
+        const getMessages = async (user1, user2) => {
+            try {
+
+                const fetchedMessages = await fetchMessages(user1, user2);
+
+                if (fetchedMessages) {
+                    console.log(fetchedMessages, "sdklgoldfh")
+                    setMessages((prevMessages) => [...prevMessages, ...fetchedMessages]);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        };
+        if (privateChatUser && name) {
+            // socket.emit("BlueTickValidate", ({ user1: privateChatUser.name, user2: name }))
+            if (privateChatUser.name === "Global")
+                getMessages("Global", "Global");
+            else
+                getMessages(privateChatUser.name, name);
+        }
+
+    }, [privateChatUser, name])
+
+    useEffect(() => {
+        const getUsers = async () => {
+            try {
+                const fetchedUsers = await fetchUsers();
+                setUsers(fetchedUsers);
+                console.log(fetchedUsers);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        getUsers();
+    }, []);
+
+    useEffect(() => {
+        const newSocket = io(API_URL);
+        setSocket(newSocket);
+
+        const fetchUserData = () => {
+            if ("userData" in localStorage) {
+                let userData = JSON.parse(localStorage.getItem("userData"));
+                setName(userData.email);
+                newSocket.emit("join", { name: userData.email, room: "" }, (error) => {
+                    if (error) {
+                        console.log(error);
+                    }
+                });
+            }
+        };
+        fetchUserData();
+
+        newSocket.on("onlinePeople", (onlineData) => {
+            console.log(onlineData?.users); // Should print the list of online users
+            setOnlineMembers(onlineData?.users || []);
+        });
+
+
+        newSocket.on('message', (message) => {
+            setMessages((prevMessages) => [...prevMessages, message]);
+        });
+
+        newSocket.on('connect', () => {
+            console.log(`Connected with socket ID: ${newSocket.id}`);
+        });
+
+        newSocket.on('disconnect', () => {
+            console.log(`Disconnected from socket ID: ${newSocket.id}`);
+        });
+
+        return () => {
+            newSocket.disconnect();
+        };
+    }, [API_URL]);
+
+    const handleSendMessage = () => {
+        if (privateChatUser.name === "Global") {
+            GlobalSend()
+            return
+        }
+        if (message && socket) {
+            if (privateChatUser) {
+                socket.emit('privateMessage', { message, to: privateChatUser.name }, (seenOrNot) => {
+                    console.log(message, messages)
+                    const timestamp = formatTimestamp(new Date());
+                    if (privateChatUser?.name !== name)
+                        setMessages((prevMessages) => [...prevMessages, { text: message, user: name, timestamp: timestamp, seen: seenOrNot }])
+                    setMessage('')
+                });
+            } else {
+                alert("Select a user to chat with privately.");
+            }
+        }
+    };
+    const GlobalChat = async () => {
+        setPrivateChatUser({ name: "Global" });
+        setMessages([]);
+    }
+    const GlobalSend = async () => {
+        if (message && socket) {
+            socket.emit('Global', message);
+            const timestamp = formatTimestamp(new Date());
+            setMessages((prevMessages) => [...prevMessages, { text: message, user: name, timestamp: timestamp }])
+            setMessage('')
+        }
+    }
+    const handleStartPrivateChat = (user) => {
+        setPrivateChatUser({ name: user.email });
+        setMessages([])
+    };
+    const checkHeIsInOnline = (dataInOnline) => {
+        for (let i of onlineMembers) {
+            if (i.name === dataInOnline)
+                return true
+        }
+        return false
+    }
+    return (
+        <div className="container mx-auto">
+            <div className="min-w-full border rounded lg:grid lg:grid-cols-3">
+                <div className="border-r border-gray-300 lg:col-span-1">
+                    <div className="relative flex items-center p-3 border-b border-gray-300">
+                        {name && <>
+                            <img className="object-cover w-10 h-10 rounded-full"
+                                src="" alt="username" />
+                            <span className="block ml-2 font-bold text-gray-600">{name}</span>
+                        </>}
+                    </div>
+                    <div className="mx-3 my-3">
+                        <div className="relative text-gray-600">
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-2">
+                                <svg fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                    viewBox="0 0 24 24" className="w-6 h-6 text-gray-300">
+                                    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </span>
+                            <input type="search" className="block w-full py-2 pl-10 bg-gray-100 rounded outline-none" name="search"
+                                placeholder="Search" required />
+                        </div>
+                    </div>
+
+                    <ChatList
+                        users={users}
+                        privateChatUser={privateChatUser}
+                        handleStartPrivateChat={handleStartPrivateChat}
+                        name={name}
+                        checkHeIsInOnline={checkHeIsInOnline}
+                        GlobalChat={GlobalChat}
+                    />
+                </div>
+                <div className="hidden lg:col-span-2 lg:block">
+                    <div className="w-full">
+
+                        {privateChatUser && <>
+                            <div className="relative flex items-center p-3 border-b border-gray-300">
+                                <img className="object-cover w-10 h-10 rounded-full"
+                                    src="" alt="username" />
+                                <div className='block'>
+                                    <span className="block ml-2 font-bold text-gray-600">
+                                        {privateChatUser?.name == name ? "You" : privateChatUser?.name}</span>
+                                    <span className='block ml-2'>{checkHeIsInOnline(privateChatUser?.name)?"Online":"Offline"}</span>
+                                </div>
+
+
+                            </div>
+                        </>}
+
+                        <div className="relative w-full p-6 overflow-y-auto h-[28rem]">
+                            <ul className="space-y-2">
+                                {messages.map((message, index) => (
+                                    ((message.user !== "Info007") && (message.user == name || message.user == privateChatUser?.name || privateChatUser?.name == "Global")) && (
+                                        <li key={index} className={`flex justify-${message.user === name ? "end" : "start"}`}>
+                                            <div>
+                                                <div className={`relative max-w-xl px-4 py-2 rounded shadow ${message.user === name ? "bg-blue-500 text-gray-50" : "bg-gray-100 text-gray-700"}`}>
+                                                    <span className="block">{message.text}</span>
+
+                                                </div>
+                                                <div className='flex justify-end mr-1'>
+                                                    <span className="block text-[12px]">{message.timestamp}</span>
+                                                    {message.user === name && (
+                                                        message?.seen
+                                                            ? <span><DoneAllRounded style={{ color: message?.seen === 2 ? 'blue' : 'black' }} /></span>
+                                                            : onlineMembers.some(user => user.name === privateChatUser?.name)
+                                                                ? <span><DoneAllRounded /></span>
+                                                                : <span><CheckRounded /></span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </li>
+                                    )
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="flex items-center justify-between w-full p-3 border-t border-gray-300">
+                            <input type="text" placeholder="Message" value={message} onChange={(e) => setMessage(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                className="block w-full py-2 pl-4 mx-3 bg-gray-100 rounded-full outline-none focus:text-gray-700"
+                                name="message" required />
+
+                            <button type="submit" onClick={handleSendMessage}>
+                                <svg className="w-5 h-5 text-gray-500 origin-center transform rotate-90" xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20" fill="currentColor">
+                                    <path
+                                        d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div >
+    );
+};
+
+export default Chat;
