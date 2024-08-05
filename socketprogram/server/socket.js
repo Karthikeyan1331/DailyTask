@@ -1,6 +1,7 @@
 const { Server } = require("socket.io");
 const { users, addUser, getUser, getUserByName, removeUser, getUsersInRoom, formatTimestamp } = require('./user');
 const { messageSendReceive, globalMessageSender, messageReceived } = require('./controllers/ChatController');
+const { lastSeen } = require("./controllers/LoginController")
 
 const initializeSocket = (server) => {
     const io = new Server(server, {
@@ -34,7 +35,7 @@ const initializeSocket = (server) => {
                 // Save message to database
                 try {
                     const savedMessage = await messageSendReceive(user.name, recipient.name, text, 1);
-                    io.to(recipient.id).emit('message', { user: user.name, text: text, timestamp: timestamp});
+                    io.to(recipient.id).emit('message', { user: user.name, text: text, timestamp: timestamp });
                     seenOrNot = 1
                 } catch (error) {
                     console.error('Error saving message:', error);
@@ -60,15 +61,27 @@ const initializeSocket = (server) => {
                 console.error('Error saving global message:', error);
             }
         });
-
+        //Blue tick
+        socket.on("seenMessageByReceiver", async ({ user, receiver }) => {
+            try {
+                const sender = getUserByName(user);
+                console.log(sender,"dksagkhdfjghldfj;gh",receiver,"end")
+                if (sender) {
+                    io.to(sender.id).emit('messageSeenByReceiver', { receiver });
+                }
+            } catch (error) {
+                console.error('Error handling seenMessageByReceiver:', error);
+            }
+        });
         //BlueTick
         // socket.on("BlueTickValidate",(BlueTick)=>{
         //     console.log(BlueTick,"Hello")
         // })
 
-        socket.on('disconnect', () => {
+        socket.on('disconnect', async () => {
             const user = removeUser(socket.id);
             if (user) {
+                await lastSeen(user.name)
                 io.to(user.room).emit('message', { user: 'Info007', text: `${user.name} has left.` });
                 io.emit("onlinePeople", { users });
             }

@@ -1,4 +1,5 @@
 const User = require('../models/userSchema');
+const { use } = require('../route/login');
 
 //Create a new doctor
 exports.loginUser = async (req, res) => {
@@ -27,10 +28,41 @@ exports.loginUser = async (req, res) => {
 
         // Send the token in the response
         res.status(200).json({ userData: user3 });
-        
+
         // Respond with success
     } catch (error) {
         console.error('Error during login:', error);
         res.status(500).json({ message: 'Login failed' });
     }
 };
+
+exports.lastSeen = async (email) => {
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        user.lastSeen = new Date();
+        await user.save();
+        console.log(`Last seen date updated for user: ${email}`);
+    } catch (error) {
+        console.error('Error updating last seen date:', error.message);
+    }
+};
+
+exports.getLastSeen = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) {
+            res.status("201").json({ message: "User is not found" })
+        }
+        let lastSeen = user.lastSeen
+        await user.save()
+        res.status("200").json({ lastSeen })
+    }
+    catch (error) {
+        console.log(error)
+        res.status("500").json({ error })
+    }
+}

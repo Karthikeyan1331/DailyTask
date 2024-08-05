@@ -1,6 +1,6 @@
 const Chats = require('../models/Message');
 const User = require('../models/userSchema');
-
+const Message = require("../models/TestMessage")
 async function findUserIDWithName(name) {
     const id = await User.findOne({ email: name });
     console.log(id)
@@ -8,27 +8,17 @@ async function findUserIDWithName(name) {
 }
 exports.messageSendReceive = async (sender, receiver, text, seen = 0) => {
     try {
-        let chat = await Chats.findOne({ user1: sender, user2: receiver });
-
-        if (!chat) {
-            chat = await Chats.findOne({ user1: receiver, user2: sender });
-        }
-
-        if (!chat) {
-            chat = new Chats({
-                user1: sender,
-                user2: receiver,
-                messages: []
-            });
-        }
-        const message = {
-            sender: sender,
-            text: text,
+        // Create a new message document
+        const message = new Message({
+            sender,
+            receiver,
+            text,
             timestamp: new Date(),
-            seen: seen
-        };
-        chat.messages.push(message);
-        await chat.save();
+            seen
+        });
+
+        // Save the message to the database
+        await message.save();
 
         return message;
     } catch (error) {
@@ -46,30 +36,17 @@ exports.getUsers = async (req, res) => {
     }
 };
 exports.globalMessageSender = async (sender, text, seen = false) => {
-    console.log(sender, text, seen = false)
+    console.log(sender, text, seen);
+
     try {
-        let chat = await Chats.findOne({ user1: "Global", user2: "Global" });
-
-        if (!chat) {
-            chat = await Chats.findOne({ user1: "Global", user2: "Global" });
-        }
-
-        if (!chat) {
-            chat = new Chats({
-                user1: "Global",
-                user2: "Global",
-                messages: []
-            });
-        }
-        const message = {
-            sender: sender,
-            text: text,
+        const message = new Message({
+            sender,
+            receiver: "Global",
+            text,
             timestamp: new Date(),
-            seen: seen
-        };
-        chat.messages.push(message);
-        await chat.save();
-
+            seen
+        });
+        await message.save();
         return message;
     } catch (error) {
         console.error('Error saving message:', error);
@@ -77,62 +54,88 @@ exports.globalMessageSender = async (sender, text, seen = false) => {
     }
 }
 exports.getMessage = async (req, res) => {
-    const { user1, user2 } = req.body;
-    // console.log(user1, user2, "her")
-    await messageSeen(user1, user2)
     try {
-        // Find the chat between the two users
-        let chat = await Chats.findOne({ user1, user2 });
-
-        if (!chat) {
-            chat = await Chats.findOne({ user1: user2, user2: user1 });
+        const { user1: sender, user2: receiver } = req.body;
+        await messageSeen(sender, receiver)
+        if (!sender || !receiver) {
+            return res.status(400).json({ message: 'Sender and receiver are required' });
         }
-
-        if (!chat) {
-            return res.status(201).json({ message: "No conversation found between the users." });
-        }
-
-        res.status(200).json(chat.messages);
+        const messages = await Message.find({
+            $or: [
+                { sender, receiver },
+                { sender: receiver, receiver: sender }
+            ]
+        }).sort({ timestamp: 1 });
+        const formattedMessages = messages.map(({ sender, text, timestamp, seen }) => ({
+            sender,
+            text,
+            timestamp,
+            seen
+        }));
+        res.status(200).json(formattedMessages);
     } catch (error) {
-        console.error('Error fetching messages:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error retrieving messages:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
-}
+};
 exports.messageReceived = async (email) => {
 
     try {
-        let chats = await Chats.find({
-            $or: [{ user1: email }, { user2: email }]
+        const messages = await Message.find({
+            receiver: email,
+            seen: { $lt: 1 }
         });
-        for (let chat of chats) {
-            let isUpdated = false;
-            chat.messages.forEach(message => {
-                if (message.sender !== email && message.seen < 1) {
-                    message.seen = 1;
-                    isUpdated = true;
-                }
-            });
-            if (isUpdated) {
-                await chat.save();
+        const updatePromises = messages.map(message => {
+            if (message.seen < 1) {
+                message.seen = 1;
+                return message.save();
             }
-        }
+        });
+        await Promise.all(updatePromises);
+
+        console.log('Messages updated successfully');
     } catch (error) {
         console.error('Error updating messages:', error);
         throw new Error('Error updating messages');
     }
 }
 async function messageSeen(email1, email2) {
-    let chat = await Chats.findOne({ user1: email1, user2: email2 });
-    if (!chat) {
-        chat = await Chats.findOne({ user1: email2, user2: email1 });
+    try {
+        // Update all relevant messages to set the seen status to 2
+        const result = await Message.updateMany(
+            {
+                $or: [
+                    { sender: email1, receiver: email2 },
+                    { sender: email2, receiver: email1 }
+                ],
+                sender: { $ne: email2 }, // Only update if the sender is not email2
+                seen: { $lt: 2 } // Only update messages with seen status less than 2
+            },
+            { $set: { seen: 2 } } // Set the seen status to 2
+        );
+        await User.findOneAndUpdate({ email: email1 }, { $set: { lastSeen: new Date } })
+
+        if (result.matchedCount > 0) {
+            console.log(`${result.modifiedCount} messages updated.`);
+        } else {
+            console.log('No messages to update.');
+        }
+    } catch (error) {
+        console.error('Error updating message seen status:', error);
+        throw new Error('Error updating message seen status');
     }
-    if (chat) {
-        chat.messages.forEach(message => {
-            if ((message.sender !== email2 || email1 == email2) && message.seen <= 1) {
-                
-                message.seen = 2;
-            }
-        });
-        await chat.save();
+}
+exports.messageAllSeen = async (req, res) => {
+    console.log("End point reached")
+    try {
+        console.log("1")
+        const { sender, receiver } = req.body
+        console.log("2")
+        await messageSeen(sender, receiver)
+        console.log("3")
+        res.status(200).json({ message: "Successfull" })
+    }
+    catch (error) {
+        res.status(400).json(error)
     }
 }

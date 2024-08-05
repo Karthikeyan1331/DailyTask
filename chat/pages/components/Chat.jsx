@@ -1,12 +1,14 @@
 'use client'
 import Link from 'next/link';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import io from 'socket.io-client';
-import { fetchUsers, fetchMessages, formatTimestamp } from './fetchUsers';
+import { fetchUsers, fetchMessages, formatTimestamp, fetchLastSeen, userSeenMessage } from './fetchUsers';
 import ChatList from './Users';
 import { DoneAllRounded, CheckRounded } from '@mui/icons-material';
 const Chat = () => {
     const API_URL = "http://localhost:8000"
+    const curUser = useRef();
+    const curSender = useRef();
     const [socket, setSocket] = useState(null);
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
@@ -14,6 +16,8 @@ const Chat = () => {
     const [users, setUsers] = useState([]);
     const [privateChatUser, setPrivateChatUser] = useState(null);
     const [onlineMembers, setOnlineMembers] = useState([]);
+    const [lastSeen, setLastSeen] = useState();
+    const [onlineSeen, setOnlineSeen] = useState(false)
     useEffect(() => {
         const getMessages = async (user1, user2) => {
             try {
@@ -36,7 +40,7 @@ const Chat = () => {
                 getMessages(privateChatUser.name, name);
         }
 
-    }, [privateChatUser, name])
+    }, [privateChatUser])
 
     useEffect(() => {
         const getUsers = async () => {
@@ -51,7 +55,21 @@ const Chat = () => {
 
         getUsers();
     }, []);
-
+    useEffect(() => {
+        console.log("left", onlineSeen)
+        if (onlineSeen) {
+            console.log(messages)
+            console.log("Message seen")
+            if (name) {
+                setMessages((prevMessages) =>
+                    prevMessages.map((message) =>
+                        message.user === name ? { ...message, seen: 2 } : message
+                    )
+                );
+                setOnlineSeen(false)
+            }
+        }
+    }, [messages, onlineSeen, name])
     useEffect(() => {
         const newSocket = io(API_URL);
         setSocket(newSocket);
@@ -74,11 +92,20 @@ const Chat = () => {
             setOnlineMembers(onlineData?.users || []);
         });
 
-
         newSocket.on('message', (message) => {
             setMessages((prevMessages) => [...prevMessages, message]);
+            console.log(curUser?.current?.innerHTML, message.user, name)
+            let temp = curSender.current.innerHTML
+            if (curUser?.current?.innerHTML === message.user && temp) {
+                newSocket.emit("seenMessageByReceiver", { user: message.user, receiver: temp });
+            }
         });
-
+        newSocket.on('messageSeenByReceiver', ({ receiver }) => {
+            if (curSender?.current)
+                userSeenMessage(curSender.current.innerHTML, receiver)
+            setOnlineSeen(true)
+            console.log("Hello")
+        });
         newSocket.on('connect', () => {
             console.log(`Connected with socket ID: ${newSocket.id}`);
         });
@@ -142,7 +169,9 @@ const Chat = () => {
                         {name && <>
                             <img className="object-cover w-10 h-10 rounded-full"
                                 src="" alt="username" />
-                            <span className="block ml-2 font-bold text-gray-600">{name}</span>
+                            <span className="block ml-2 font-bold text-gray-600"
+                                ref={curSender}
+                            >{name}</span>
                         </>}
                     </div>
                     <div className="mx-3 my-3">
@@ -175,9 +204,9 @@ const Chat = () => {
                                 <img className="object-cover w-10 h-10 rounded-full"
                                     src="" alt="username" />
                                 <div className='block'>
-                                    <span className="block ml-2 font-bold text-gray-600">
+                                    <span className="block ml-2 font-bold text-gray-600" ref={curUser}>
                                         {privateChatUser?.name == name ? "You" : privateChatUser?.name}</span>
-                                    <span className='block ml-2'>{checkHeIsInOnline(privateChatUser?.name)?"Online":"Offline"}</span>
+                                    <span className='block ml-2'>{checkHeIsInOnline(privateChatUser?.name) ? "Online" : lastSeen ? lastSeen : ""}</span>
                                 </div>
 
 
@@ -192,14 +221,13 @@ const Chat = () => {
                                             <div>
                                                 <div className={`relative max-w-xl px-4 py-2 rounded shadow ${message.user === name ? "bg-blue-500 text-gray-50" : "bg-gray-100 text-gray-700"}`}>
                                                     <span className="block">{message.text}</span>
-
                                                 </div>
                                                 <div className='flex justify-end mr-1'>
                                                     <span className="block text-[12px]">{message.timestamp}</span>
                                                     {message.user === name && (
                                                         message?.seen
                                                             ? <span><DoneAllRounded style={{ color: message?.seen === 2 ? 'blue' : 'black' }} /></span>
-                                                            : onlineMembers.some(user => user.name === privateChatUser?.name)
+                                                            : (onlineMembers.some(user => user.name === privateChatUser?.name))
                                                                 ? <span><DoneAllRounded /></span>
                                                                 : <span><CheckRounded /></span>
                                                     )}

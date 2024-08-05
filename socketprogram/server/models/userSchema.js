@@ -19,11 +19,7 @@ const userSchema = new Schema({
     },
     profile: {
         type: String,
-        default: null
-    },
-    Online: {
-        type: Boolean,
-        default: true,
+        // default: null
     },
     createAt:{
         type: Date, default: Date.now 
