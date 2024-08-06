@@ -1,42 +1,28 @@
 const User = require('../models/userSchema');
 const { use } = require('../route/login');
 
-//Create a new doctor
+
 exports.loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log(email)
-
-        // Check if username exists in either username or email field
-        const email1 = await User.findOne({ email });
-        const user = await User.findOne({ username: email });
-        const user3 = await User.findOne({ $or: [{ username: email }, { email }] });
-        if (!user && !email1) {
-            return res.status(201).json({ message: 'Username not exists' });
+        const user = await User.findOne({ $or: [{ username: email }, { email }] });
+        
+        if (!user) {
+            return res.status(404).json({ message: 'Username does not exist' });
         }
-
-        // Check if password matches
-
-        if (user3.password !== password) {
-            return res.status(202).json({ message: 'Password is incorrect' });
+        if (user.password !== password) {
+            return res.status(401).json({ message: 'Password is incorrect' });
         }
-
-        // Update online status to true (if you have this field)
-        user3.Online = true;
-        await user3.save();
-        // const token = generateAuthToken(user3);
-
-        // Send the token in the response
-        res.status(200).json({ userData: user3 });
-
-        // Respond with success
+        user.online = true;
+        await user.save();
+        return res.status(200).json({ userData: user });
     } catch (error) {
         console.error('Error during login:', error);
         res.status(500).json({ message: 'Login failed' });
     }
 };
 
-exports.lastSeen = async (email) => {
+exports.lastSeenFun = async (email) => {
     try {
         const user = await User.findOne({ email });
         if (!user) {
@@ -55,14 +41,12 @@ exports.getLastSeen = async (req, res) => {
         const { email } = req.body;
         const user = await User.findOne({ email });
         if (!user) {
-            res.status("201").json({ message: "User is not found" })
+            return res.status(404).json({ message: "User not found" });
         }
-        let lastSeen = user.lastSeen
-        await user.save()
-        res.status("200").json({ lastSeen })
+        const lastSeen = user.lastSeen;
+        res.status(200).json({ lastSeen });
+    } catch (error) {
+        console.error('Error fetching last seen date:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
-    catch (error) {
-        console.log(error)
-        res.status("500").json({ error })
-    }
-}
+};

@@ -33,6 +33,7 @@ export const fetchMessages = async (user1, user2) => {
                 text: msg.text,
                 user: msg.sender,
                 timestamp: formatTimestamp(new Date(msg.timestamp)),
+                fileName: msg.doc,
                 seen: msg.seen
             }));
 
@@ -65,7 +66,38 @@ export const userSeenMessage = async (sender, receiver) => {
     }
 }
 export function formatTimestamp(date) {
+    console.log(date)
+    date = !(date instanceof Date) ? new Date(date) : date
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
+}
+
+export const handleSendMessageToBackend = async (formData) => {
+    try {
+        const config = {
+            headers: { 'content-type': 'multipart/form-data' }
+        };
+        const response = await axios.post(`${API_URL}/uploadwithfile`, formData, config);
+        if (response.status === 201) {
+            return response?.data
+        }
+        else {
+            console.log(response);
+        }
+
+    } catch (error) {
+        console.error('Error sending message:', error);
+    }
+};
+
+export const powerNotified = (catagory, message) => {
+    Notification.requestPermission().then(per => {
+        if (per === 'granted') {
+            new Notification(catagory, {
+                body: message,
+                icon:"Chat logo.png"
+            })
+        }
+    })
 }

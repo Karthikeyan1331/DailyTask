@@ -2,9 +2,10 @@
 import Link from 'next/link';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import io from 'socket.io-client';
-import { fetchUsers, fetchMessages, formatTimestamp, fetchLastSeen, userSeenMessage } from './fetchUsers';
+import { fetchUsers, fetchMessages, formatTimestamp, fetchLastSeen, userSeenMessage, powerNotified } from './fetchUsers';
 import ChatList from './Users';
-import { DoneAllRounded, CheckRounded } from '@mui/icons-material';
+import { DoneAllRounded, CheckRounded, CloudDownloadRounded  } from '@mui/icons-material';
+import ChatInputBox from './ChatBox';
 const Chat = () => {
     const API_URL = "http://localhost:8000"
     const curUser = useRef();
@@ -23,7 +24,11 @@ const Chat = () => {
             try {
 
                 const fetchedMessages = await fetchMessages(user1, user2);
-
+                let temp = privateChatUser?.name
+                if (name && temp) {
+                    console.log("hello123123", name, temp)
+                    socket.emit("seenMessageByReceiver", { user: temp, receiver: name });
+                }
                 if (fetchedMessages) {
                     console.log(fetchedMessages, "sdklgoldfh")
                     setMessages((prevMessages) => [...prevMessages, ...fetchedMessages]);
@@ -61,6 +66,7 @@ const Chat = () => {
             console.log(messages)
             console.log("Message seen")
             if (name) {
+
                 setMessages((prevMessages) =>
                     prevMessages.map((message) =>
                         message.user === name ? { ...message, seen: 2 } : message
@@ -69,7 +75,20 @@ const Chat = () => {
                 setOnlineSeen(false)
             }
         }
+
     }, [messages, onlineSeen, name])
+    useEffect(() => {
+        console.log("llklklklklklklkl")
+        const fetchLastSeenTime = async () => {
+            if (!checkHeIsInOnline(privateChatUser?.name)) {
+                const lastSeenTime = await fetchLastSeen(privateChatUser?.name);
+                setLastSeen(lastSeenTime);
+            }
+        };
+
+        fetchLastSeenTime();
+
+    }, [onlineMembers, privateChatUser])
     useEffect(() => {
         const newSocket = io(API_URL);
         setSocket(newSocket);
@@ -93,14 +112,28 @@ const Chat = () => {
         });
 
         newSocket.on('message', (message) => {
-            setMessages((prevMessages) => [...prevMessages, message]);
-            console.log(curUser?.current?.innerHTML, message.user, name)
-            let temp = curSender.current.innerHTML
+            let temp = curSender.current.innerHTML == "You" ? message.user : curSender.current.innerHTML
+            message.timestamp = formatTimestamp(message.timestamp)
+            if (curUser.current?.innerHTML == "You") {
+                message.seen = 2
+                setMessages((prevMessages) => [...prevMessages, message]);
+            }
+            else {
+                setMessages((prevMessages) => [...prevMessages, message]);
+            }
+            console.log(curUser?.current?.innerHTML, message.user)
+
+            console.log(temp, "dshjgfkgf")
             if (curUser?.current?.innerHTML === message.user && temp) {
                 newSocket.emit("seenMessageByReceiver", { user: message.user, receiver: temp });
             }
+            else {
+                powerNotified(message.user, message.text)
+            }
+
         });
         newSocket.on('messageSeenByReceiver', ({ receiver }) => {
+            console.log(receiver)
             if (curSender?.current)
                 userSeenMessage(curSender.current.innerHTML, receiver)
             setOnlineSeen(true)
@@ -119,18 +152,17 @@ const Chat = () => {
         };
     }, [API_URL]);
 
-    const handleSendMessage = () => {
+    const handleSendMessage = (fileName = null) => {
         if (privateChatUser.name === "Global") {
             GlobalSend()
             return
         }
-        if (message && socket) {
+        if ((fileName || message) && socket) {
             if (privateChatUser) {
-                socket.emit('privateMessage', { message, to: privateChatUser.name }, (seenOrNot) => {
-                    console.log(message, messages)
+                socket.emit('privateMessage', { message, to: privateChatUser.name, fileName }, (seenOrNot) => {
                     const timestamp = formatTimestamp(new Date());
                     if (privateChatUser?.name !== name)
-                        setMessages((prevMessages) => [...prevMessages, { text: message, user: name, timestamp: timestamp, seen: seenOrNot }])
+                        setMessages((prevMessages) => [...prevMessages, { text: message, user: name, timestamp: timestamp, seen: seenOrNot, fileName: fileName }])
                     setMessage('')
                 });
             } else {
@@ -206,7 +238,7 @@ const Chat = () => {
                                 <div className='block'>
                                     <span className="block ml-2 font-bold text-gray-600" ref={curUser}>
                                         {privateChatUser?.name == name ? "You" : privateChatUser?.name}</span>
-                                    <span className='block ml-2'>{checkHeIsInOnline(privateChatUser?.name) ? "Online" : lastSeen ? lastSeen : ""}</span>
+                                    <span className='block ml-2'>{checkHeIsInOnline(privateChatUser?.name) ? "Online" : lastSeen ? new Date(lastSeen).toLocaleString() : "Fetching..."}</span>
                                 </div>
 
 
@@ -216,11 +248,24 @@ const Chat = () => {
                         <div className="relative w-full p-6 overflow-y-auto h-[28rem]">
                             <ul className="space-y-2">
                                 {messages.map((message, index) => (
-                                    ((message.user !== "Info007") && (message.user == name || message.user == privateChatUser?.name || privateChatUser?.name == "Global")) && (
+                                    (message.user !== "Info007") && (message.user === name || message.user === privateChatUser?.name || privateChatUser?.name === "Global") && (
                                         <li key={index} className={`flex justify-${message.user === name ? "end" : "start"}`}>
                                             <div>
                                                 <div className={`relative max-w-xl px-4 py-2 rounded shadow ${message.user === name ? "bg-blue-500 text-gray-50" : "bg-gray-100 text-gray-700"}`}>
-                                                    <span className="block">{message.text}</span>
+                                                    <span className="block whitespace-pre-wrap">{message.text}</span>
+                                                    {message.fileName && (
+                                                        <div className="mt-2 flex items-center">
+                                                            <a
+                                                                href={`http://localhost:8000/sendingFiles/${message.fileName}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="flex items-center text-gray-950 hover:underline"
+                                                            >
+                                                                <CloudDownloadRounded className="mr-1 text-gray-950" />
+                                                                {message.fileName}
+                                                            </a>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className='flex justify-end mr-1'>
                                                     <span className="block text-[12px]">{message.timestamp}</span>
@@ -239,20 +284,13 @@ const Chat = () => {
                             </ul>
                         </div>
 
-                        <div className="flex items-center justify-between w-full p-3 border-t border-gray-300">
-                            <input type="text" placeholder="Message" value={message} onChange={(e) => setMessage(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                className="block w-full py-2 pl-4 mx-3 bg-gray-100 rounded-full outline-none focus:text-gray-700"
-                                name="message" required />
-
-                            <button type="submit" onClick={handleSendMessage}>
-                                <svg className="w-5 h-5 text-gray-500 origin-center transform rotate-90" xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20" fill="currentColor">
-                                    <path
-                                        d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                                </svg>
-                            </button>
-                        </div>
+                        <ChatInputBox
+                            message={message}
+                            setMessage={setMessage}
+                            handleSendMessage={handleSendMessage}
+                            senderName={name}
+                            receiverName={privateChatUser?.name}
+                        />
                     </div>
                 </div>
             </div>

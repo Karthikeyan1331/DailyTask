@@ -1,7 +1,7 @@
 const { Server } = require("socket.io");
 const { users, addUser, getUser, getUserByName, removeUser, getUsersInRoom, formatTimestamp } = require('./user');
 const { messageSendReceive, globalMessageSender, messageReceived } = require('./controllers/ChatController');
-const { lastSeen } = require("./controllers/LoginController")
+const { lastSeenFun } = require("./controllers/LoginController")
 
 const initializeSocket = (server) => {
     const io = new Server(server, {
@@ -26,16 +26,16 @@ const initializeSocket = (server) => {
             messageReceived(name)
             callback();
         });
-        socket.on('privateMessage', async ({ message: text, to }, callback) => {
+        socket.on('privateMessage', async ({ message: text, to, fileName }, callback) => {
             const user = getUser(socket.id);
             const recipient = getUserByName(to);
-            const timestamp = formatTimestamp(new Date());
+            const timestamp = new Date();
             let seenOrNot = 0
             if (user && recipient) {
                 // Save message to database
                 try {
-                    const savedMessage = await messageSendReceive(user.name, recipient.name, text, 1);
-                    io.to(recipient.id).emit('message', { user: user.name, text: text, timestamp: timestamp });
+                    const savedMessage = await messageSendReceive(user.name, recipient.name, text, 1, fileName);
+                    io.to(recipient.id).emit('message', { user: user.name, text: text, timestamp: timestamp, fileName: fileName });
                     seenOrNot = 1
                 } catch (error) {
                     console.error('Error saving message:', error);
@@ -52,7 +52,7 @@ const initializeSocket = (server) => {
         });
         socket.on("Global", async (message) => {
             const user = getUser(socket.id);
-            const timestamp = formatTimestamp(new Date());
+            const timestamp = new Date();
             try {
                 const savedMessage = await globalMessageSender(user.name, message, false);
                 socket.broadcast.emit('message', { user: 'Global', text: message, timestamp: timestamp });
@@ -65,7 +65,7 @@ const initializeSocket = (server) => {
         socket.on("seenMessageByReceiver", async ({ user, receiver }) => {
             try {
                 const sender = getUserByName(user);
-                console.log(sender,"dksagkhdfjghldfj;gh",receiver,"end")
+                // console.log(sender,"dksagkhdfjghldfj;gh",receiver,"end")
                 if (sender) {
                     io.to(sender.id).emit('messageSeenByReceiver', { receiver });
                 }
@@ -81,7 +81,8 @@ const initializeSocket = (server) => {
         socket.on('disconnect', async () => {
             const user = removeUser(socket.id);
             if (user) {
-                await lastSeen(user.name)
+                console.log(user.name, "Is disconnected")
+                await lastSeenFun(user.name)
                 io.to(user.room).emit('message', { user: 'Info007', text: `${user.name} has left.` });
                 io.emit("onlinePeople", { users });
             }

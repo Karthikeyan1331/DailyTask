@@ -11,7 +11,7 @@ require('dotenv').config();
 const initializeSocket = require("./socket");
 
 app.use(cors());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '../', 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/', loginRoute);

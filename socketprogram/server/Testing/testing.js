@@ -2,8 +2,24 @@ const express = require('express');
 const router = express.Router();
 const TestMessage = require('../models/TestMessage'); // Import the Mongoose model
 const MessagesStoreMy = require("../models/Message")
-const { faker } = require('@faker-js/faker'); // Import Faker for generating random text
+const { faker } = require('@faker-js/faker'); // Import Faker for generating random text]
+const {BSON} = require("bson")
 
+async function getDocumentSize() {
+    try {
+        const doc = await MessagesStoreMy.findById("66add66e774067bfce9bac33").lean();
+        const sizeInBytes = BSON.calculateObjectSize(doc);
+        const sizeInMB = sizeInBytes / (1024 * 1024);
+
+        console.log("Size in Bytes:", sizeInBytes);
+        console.log("Size in MB:", sizeInMB);
+    } catch (error) {
+        console.error("Error:", error);
+    } finally {
+        // mongoose.connection.close();
+    }
+}
+getDocumentSize()
 // POST route to store 100 test messages
 router.post('/storeTested', async (req, res) => {
     try {
