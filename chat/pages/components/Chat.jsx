@@ -295,7 +295,7 @@ const Chat = () => {
                                                                 <img
                                                                     src={`http://localhost:8000/sendingFiles/${message.fileName}`}
                                                                     alt="preview"
-                                                                    className="w-[300px] h-[200px] object-cover cursor-pointer hover:opacity-70"
+                                                                    className="max-w-[400px] max-h-[400px] object-cover cursor-pointer hover:opacity-70"
                                                                     onClick={() => handleDownload(message.fileName)}
                                                                 />
                                                             ) : (
