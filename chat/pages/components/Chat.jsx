@@ -2,9 +2,12 @@
 import Link from 'next/link';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import io from 'socket.io-client';
-import { fetchUsers, fetchMessages, formatTimestamp, fetchLastSeen, userSeenMessage, powerNotified } from './fetchUsers';
+import {
+    fetchUsers, fetchMessages, formatTimestamp, fetchLastSeen,
+    userSeenMessage, powerNotified, handleDownload, countMessageNotSeen
+} from './fetchUsers';
 import ChatList from './Users';
-import { DoneAllRounded, CheckRounded, CloudDownloadRounded  } from '@mui/icons-material';
+import { DoneAllRounded, CheckRounded, CloudDownloadRounded } from '@mui/icons-material';
 import ChatInputBox from './ChatBox';
 const Chat = () => {
     const API_URL = "http://localhost:8000"
@@ -19,6 +22,7 @@ const Chat = () => {
     const [onlineMembers, setOnlineMembers] = useState([]);
     const [lastSeen, setLastSeen] = useState();
     const [onlineSeen, setOnlineSeen] = useState(false)
+    const [countNotifications, setCountNotifications] = useState({});
     useEffect(() => {
         const getMessages = async (user1, user2) => {
             try {
@@ -47,6 +51,7 @@ const Chat = () => {
 
     }, [privateChatUser])
 
+
     useEffect(() => {
         const getUsers = async () => {
             try {
@@ -60,6 +65,22 @@ const Chat = () => {
 
         getUsers();
     }, []);
+    const getNotificationCount = async () => {
+        try {
+            const fetchedUsers = await countMessageNotSeen(name);
+            const combinedNotifications = fetchedUsers.reduce((acc, obj) => {
+                return { ...acc, ...obj };
+            }, {});
+            console.log(combinedNotifications);
+            setCountNotifications(combinedNotifications);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+    //Notification code
+    useEffect(() => {
+        if (name) getNotificationCount();
+    }, [name]);
     useEffect(() => {
         console.log("left", onlineSeen)
         if (onlineSeen) {
@@ -75,7 +96,13 @@ const Chat = () => {
                 setOnlineSeen(false)
             }
         }
-
+        if (name && messages.at(-1)?.user !== "Info007") {
+            if (!privateChatUser?.name)
+                getNotificationCount()
+            else
+                if (privateChatUser.name !== messages.at(-1)?.user)
+                    getNotificationCount()
+        }
     }, [messages, onlineSeen, name])
     useEffect(() => {
         console.log("llklklklklklklkl")
@@ -114,6 +141,7 @@ const Chat = () => {
         newSocket.on('message', (message) => {
             let temp = curSender.current.innerHTML == "You" ? message.user : curSender.current.innerHTML
             message.timestamp = formatTimestamp(message.timestamp)
+
             if (curUser.current?.innerHTML == "You") {
                 message.seen = 2
                 setMessages((prevMessages) => [...prevMessages, message]);
@@ -183,6 +211,11 @@ const Chat = () => {
         }
     }
     const handleStartPrivateChat = (user) => {
+        const updatedNotifications = { ...countNotifications };
+        delete updatedNotifications[user.email];
+
+        // Update the state with the new object
+        setCountNotifications(updatedNotifications);
         setPrivateChatUser({ name: user.email });
         setMessages([])
     };
@@ -226,6 +259,8 @@ const Chat = () => {
                         name={name}
                         checkHeIsInOnline={checkHeIsInOnline}
                         GlobalChat={GlobalChat}
+                        countNotifications={countNotifications}
+                        setCountNotifications={setCountNotifications}
                     />
                 </div>
                 <div className="hidden lg:col-span-2 lg:block">
@@ -256,13 +291,11 @@ const Chat = () => {
                                                     {message.fileName && (
                                                         <div className="mt-2 flex items-center">
                                                             <a
-                                                                href={`http://localhost:8000/sendingFiles/${message.fileName}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
+                                                                onClick={() => handleDownload(message.fileName)}
                                                                 className="flex items-center text-gray-950 hover:underline"
                                                             >
                                                                 <CloudDownloadRounded className="mr-1 text-gray-950" />
-                                                                {message.fileName}
+                                                                {message.fileName && message.fileName.slice(0, message.fileName.length - 28) + "." + message.fileName.split(".").at(-1)}
                                                             </a>
                                                         </div>
                                                     )}

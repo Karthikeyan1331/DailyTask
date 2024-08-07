@@ -160,3 +160,30 @@ exports.fileUploadSuccessOrNot = async (req, res) => {
         return res.status(500).json(error)
     }
 }
+const countdocumentfunction = async (receiver) => {
+    const senderCounts = await Message.find(
+        {
+                receiver,
+                seen: { $lt: 2 },
+                sender: { $ne: receiver }
+        },
+    );
+
+    // Extract the sender names from the unseen messages
+    const senderNames = Object.entries(
+        senderCounts
+            .reduce((acc, { sender }) => ({ ...acc, [sender]: (acc[sender] || 0) + 1 }), {})
+    ).map(([sender, count]) => ({ [sender]: count }));
+    console.log(senderNames)
+    return senderNames
+}
+exports.countMessageNotSeen = async (req, res) => {
+    try {
+        const receiver = req.params.userName;
+        console.log(receiver, "djsgakljfhlksdj")
+        let countOftheNotificationNotSeen = await countdocumentfunction(receiver)
+        res.status(200).json( countOftheNotificationNotSeen );
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

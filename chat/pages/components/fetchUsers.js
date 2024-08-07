@@ -96,8 +96,45 @@ export const powerNotified = (catagory, message) => {
         if (per === 'granted') {
             new Notification(catagory, {
                 body: message,
-                icon:"Chat logo.png"
+                icon: "Chat logo.png"
             })
         }
     })
+}
+export const handleDownload = async (filePath) => {
+    const url = `${API_URL}/sendingFiles/${filePath}`;
+    const fileName = filePath.split('/').pop().split('.').slice(0, -1).join('.') + '.' + filePath.split('.').pop();
+
+    try {
+        const response = await axios.get(url, {
+            responseType: 'blob', // Important
+        });
+
+        const blob = new Blob([response.data], { type: response.data.type });
+        const link = document.createElement('a');
+        const downloadUrl = window.URL.createObjectURL(blob);
+
+        link.href = downloadUrl;
+        link.download = fileName;
+
+        document.body.appendChild(link); // Append the link to the body
+        link.click(); // Trigger click to download
+        document.body.removeChild(link); // Remove the link from the document
+
+        window.URL.revokeObjectURL(downloadUrl); // Clean up the URL.createObjectURL object
+    } catch (error) {
+        console.error('Error downloading the file', error);
+    }
+};
+export const countMessageNotSeen = async (UserName) => {
+    const url = `${API_URL}/countMessageNotSeen/${UserName}`;
+    try {
+        const response = await axios.get(url)
+        if (response.status === 200) {
+            console.log(response.data)
+            return response.data
+        }
+    } catch (error) {
+        console.log(error)
+    }
 }
