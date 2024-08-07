@@ -5,7 +5,13 @@
 /.pnp
 .pnp.js
 .env
+*.png
+*.jpeg
+*.jpg
+*.gif
 
+# Ignore PDF files
+*.pdf
 # testing
 /coverage
 

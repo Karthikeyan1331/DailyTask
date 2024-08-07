@@ -283,20 +283,30 @@ const Chat = () => {
                         <div className="relative w-full p-6 overflow-y-auto h-[28rem]">
                             <ul className="space-y-2">
                                 {messages.map((message, index) => (
-                                    (message.user !== "Info007") && (message.user === name || message.user === privateChatUser?.name || privateChatUser?.name === "Global") && (
+                                    (message.user !== "Info007") &&
+                                    (message.user === name || message.user === privateChatUser?.name || privateChatUser?.name === "Global") && (
                                         <li key={index} className={`flex justify-${message.user === name ? "end" : "start"}`}>
                                             <div>
                                                 <div className={`relative max-w-xl px-4 py-2 rounded shadow ${message.user === name ? "bg-blue-500 text-gray-50" : "bg-gray-100 text-gray-700"}`}>
                                                     <span className="block whitespace-pre-wrap">{message.text}</span>
                                                     {message.fileName && (
                                                         <div className="mt-2 flex items-center">
-                                                            <a
-                                                                onClick={() => handleDownload(message.fileName)}
-                                                                className="flex items-center text-gray-950 hover:underline"
-                                                            >
-                                                                <CloudDownloadRounded className="mr-1 text-gray-950" />
-                                                                {message.fileName && message.fileName.slice(0, message.fileName.length - 28) + "." + message.fileName.split(".").at(-1)}
-                                                            </a>
+                                                            {["png", "jpeg", "jpg", "gif"].includes(message.fileName.split(".").at(-1).toLowerCase()) ? (
+                                                                <img
+                                                                    src={`http://localhost:8000/sendingFiles/${message.fileName}`}
+                                                                    alt="preview"
+                                                                    className="w-[300px] h-[200px] object-cover cursor-pointer hover:opacity-70"
+                                                                    onClick={() => handleDownload(message.fileName)}
+                                                                />
+                                                            ) : (
+                                                                <a
+                                                                    onClick={() => handleDownload(message.fileName)}
+                                                                    className="flex items-center text-gray-950 hover:underline"
+                                                                >
+                                                                    <CloudDownloadRounded className="mr-1 text-gray-950" />
+                                                                    {message.fileName && message.fileName.slice(0, message.fileName.length - 28) + "." + message.fileName.split(".").at(-1)}
+                                                                </a>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -316,6 +326,7 @@ const Chat = () => {
                                 ))}
                             </ul>
                         </div>
+
 
                         <ChatInputBox
                             message={message}
